@@ -10,12 +10,14 @@ import argparse
 from email.mime.text import MIMEText
 
 parser = argparse.ArgumentParser(description="DocTrail - Document Versioning System")
-parser.add_argument("annotation_root", help="Root folder for annotations")
-parser.add_argument("admin_folder", help="Folder for logs and admin files")
-parser.add_argument("alert_email", help="Email address for error notifications")
-parser.add_argument("--scan-file", help="Scan a single file")
-parser.add_argument("--rescan-all", action="store_true", help="Force rescan of all files")
-parser.add_argument("--rebuild-folders", action="store_true", help="Rebuild missing history folders")
+
+parser.add_argument("annotation_root",   help="Root folder for annotations")
+parser.add_argument("admin_folder",      help="Folder for logs and admin files")
+parser.add_argument("alert_email",       help="Email address for error notifications")
+parser.add_argument("--no-email",        help="Disable email notifications",               action="store_true")
+parser.add_argument("--scan-file",       help="Scan a single file")
+parser.add_argument("--rescan-all",      help="Force rescan of all files",                 action="store_true")
+parser.add_argument("--rebuild-folders", help="Rebuild missing history folders",           action="store_true")
 
 args = parser.parse_args()
 
@@ -62,13 +64,17 @@ def send_alert(subject, body):
     except Exception as e:
         print(f"Failed to send alert email: {e}")
 
+def conditional_alert(subject, body):
+    if not args.no_email:
+        send_alert(subject, body)
+
 def process_file(file_path, force_rescan=False):
     if os.path.splitext(file_path)[1].lower() not in ALLOWED_EXTENSIONS:
         return
 
     if os.path.splitext(file_path)[1] == "":
         log_global(datetime.datetime.now().isoformat(), f"[ERROR] File without extension: {file_path}")
-        send_alert("Versioning Error - No Extension", f"File {file_path} has no extension and was ignored.")
+        conditional_alert("Versioning Error - No Extension", f"File {file_path} has no extension and was ignored.")
         return
 
     hidden_folder = get_hidden_folder_path(file_path)
@@ -85,6 +91,7 @@ def process_file(file_path, force_rescan=False):
 
     current_hash = calculate_file_hash(file_path)
 
+    previous_hash = None
     with open(hash_file, 'r') as f:
         data = json.load(f)
         previous_hash = data.get("hash")
@@ -106,18 +113,18 @@ def process_file(file_path, force_rescan=False):
             json.dump({"hash": current_hash}, f)
 
 def full_scan(force_rescan=False):
-    for root, _, files in os.walk(ANNOTATION_ROOT):
+    for root, dirs, files in os.walk(ANNOTATION_ROOT):
+        # filter out dot folders
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
         for file in files:
+            # filter out dot files
+            if file.startswith("."):
+                continue
             process_file(os.path.join(root, file), force_rescan)
-
-def rebuild_missing_folders():
-    for root, _, files in os.walk(ANNOTATION_ROOT):
-        for file in files:
-            process_file(os.path.join(root, file), force_rescan=False)
 
 if args.scan_file:
     process_file(args.scan_file, force_rescan=args.rescan_all)
 elif args.rebuild_folders:
-    rebuild_missing_folders()
+    full_scan(force_rescan=args.rescan_all)
 else:
     full_scan(force_rescan=args.rescan_all)

@@ -76,6 +76,11 @@ python3 versioning_script.py ./Projects ./Admin your@email.com --rescan-all
 python3 versioning_script.py ./Projects ./Admin your@email.com --rebuild-folders
 ```
 
+### Disable Email Notifications
+```sh
+python3 versioning_script.py ./Projects ./Admin your@email.com --no-email
+```
+
 ---
 
 ## ⚙️ Automation (Optional for macOS)
@@ -118,6 +123,8 @@ By default, it tries sending via `localhost` SMTP (e.g., Postfix).
 - [ ] Add support for cloud storage APIs (Google Drive, Dropbox metadata integration)
 - [ ] Add GitHub Actions for CI testing
 - [ ] Add Dockerfile for containerized deployment (optional for servers)
+- [ ] Consider whether --rebuild-folders option is necessary
+- [ ] Rename Forced rescan to forced version (new version for every supported file)
 
 ---
 

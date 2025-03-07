@@ -49,6 +49,22 @@ os.makedirs(ADMIN_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".md", ".csv", ".png", ".jpg"}
 
+statistics = {
+    "total_files": 0,
+    "checked_files": 0,
+    "orphan_files": 0,
+    "new_versions": 0,
+    "touched_but_unchaged_files": 0,
+    "inconsistent_files": 0,               # --consistency-scan only
+    "errors": 0
+    }
+
+
+
+# Helper functions
+def get_timestamp(time=datetime.datetime.now()):
+    return time.strftime("%Y-%m-%dT%H-%M-%S-%f")
+
 def calculate_file_hash(filepath):
     hasher = hashlib.sha256()
     with open(filepath, 'rb') as f:
@@ -92,10 +108,21 @@ def get_history_folder_for_file(file_path):
 
     return os.path.join(project_history_folder, normalized)
 
+
+def create_new_version(file_path, history_folder, timestamp):
+    dirname, filename = os.path.split(file_path)
+    basename, ext = os.path.splitext(filename)
+    normalized_basename = normalize_filename(basename)
+    versioned_filename = f"{normalized_basename}_{timestamp}{ext}"
+    versioned_path = os.path.join(history_folder, versioned_filename)
+    shutil.copy2(file_path, versioned_path)
+    log_global(timestamp, f"[VERSION] {file_path} saved as {versioned_filename}")
+
+
 def update_hash_file(file, hash=None, mtime=0, timestamp=0):
-    data = { "last_version_hash": hash,
-                 "last_version_mtime": mtime,
-                 "last_version_timestamp": timestamp }
+    data = {    "last_version_hash": hash,
+                "last_version_mtime": mtime,
+                "last_version_timestamp": timestamp }
     with open(file, 'w') as f:
         json.dump(data, f)
 
@@ -109,16 +136,21 @@ def read_hash_file(hash_file_path):
         data.get("last_version_timestamp")
     )        
 
-# new change detection logic in v0.2
+###########################################################
+# Main function
+#
 def process_file(current_file_path, force_version=False):
+    statistics["total_files"] += 1
     if os.path.splitext(current_file_path)[1].lower() not in ALLOWED_EXTENSIONS:
         return
 
+    statistics["checked_files"] += 1
     history_folder = get_history_folder_for_file(current_file_path)
     hash_file_path = get_hash_file_path(history_folder)
 
     if not os.path.exists(history_folder):
         os.makedirs(history_folder)
+        statistics["orphan_files"] += 1
 
     if not os.path.exists(hash_file_path):
         update_hash_file(hash_file_path)
@@ -126,12 +158,13 @@ def process_file(current_file_path, force_version=False):
     last_version_hash, last_version_mtime, _ = read_hash_file(hash_file_path)
 
     current_mtime = os.path.getmtime(current_file_path)
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S-%f")
+    timestamp = get_timestamp()
 
     if force_version:
         current_hash = calculate_file_hash(current_file_path)
         create_new_version(current_file_path, history_folder, timestamp)
         update_hash_file(hash_file_path, current_hash, current_mtime, timestamp)
+        statistics["new_versions"] += 1
 
     elif args.hash_scan:
         # the most secure way to detect changes
@@ -139,6 +172,7 @@ def process_file(current_file_path, force_version=False):
         if current_hash != last_version_hash:
             create_new_version(current_file_path, history_folder, timestamp)
             update_hash_file(hash_file_path, current_hash, current_mtime, timestamp)
+            statistics["new_versions"] += 1
 
     elif args.mtime_scan:
         # no need to calculate hash if no change in mtime
@@ -147,28 +181,25 @@ def process_file(current_file_path, force_version=False):
             if current_hash != last_version_hash:
                 create_new_version(current_file_path, history_folder, timestamp)
                 update_hash_file(hash_file_path, current_hash, current_mtime, timestamp)
+                statistics["new_versions"] += 1
+            else:  # touched but unchanged
+                update_hash_file(hash_file_path, current_hash, current_mtime, timestamp)
+                statistics["touched_but_unchaged_files"] += 1
 
     elif args.consistency_scan:
         # consistency check
         current_hash = calculate_file_hash(current_file_path)
-        print(f'----- {current_file_path} --------------')
-        print(current_mtime, last_version_mtime)
-        print(current_hash, last_version_hash)
+        #print(f'----- {current_file_path} --------------')
+        #print(current_mtime, last_version_mtime)
+        #print(current_hash, last_version_hash)
         if  not ( current_mtime >= last_version_mtime and current_hash == last_version_hash ):
-            log_global(timestamp, f"[INCONSISTENCY] {current_file_path} has inconsistent hash and mtime")            
+            log_global(timestamp, f"[INCONSISTENCY] {current_file_path} has inconsistent hash and mtime")         
+            statistics["inconsistent_files"] += 1
+
+    else:
+        pass    
 
 
-# added for v0.2
-def create_new_version(file_path, history_folder, timestamp):
-    dirname, filename = os.path.split(file_path)
-    basename, ext = os.path.splitext(filename)
-    normalized_basename = normalize_filename(basename)
-    versioned_filename = f"{normalized_basename}_{timestamp}{ext}"
-    versioned_path = os.path.join(history_folder, versioned_filename)
-    shutil.copy2(file_path, versioned_path)
-    log_global(timestamp, f"[VERSION] {file_path} saved as {versioned_filename}")
-
-# --rebuild-folders removed in v0.2
 def full_scan(force_version=False):
     for root, dirs, files in os.walk(PROJECTS_ROOT):
         # filter out dot folders
@@ -177,12 +208,37 @@ def full_scan(force_version=False):
             # filter out dot files
             if file.startswith("."):
                 continue
+            print('.')
             process_file(os.path.join(root, file), force_version)
+
+
+
+############################################
+# Main
+############################################
+
+############################################
+# Start
+#
+start_time = datetime.datetime.now()
+log_global(get_timestamp(start_time), "[START] Versioning script started" + '\n' + json.dumps(vars(args), indent=4))
 
 if args.scan_file:
     process_file(args.scan_file, force_version=args.force_version)
 else:
     full_scan(force_version=args.force_version)
+
+############################################
+# End of the script
+#
+end_time = datetime.datetime.now()
+log_global(get_timestamp(end_time), "[END] Versioning script ended" + '\n' + json.dumps(statistics, indent=4))
+
+# Calculate and log the total running time
+total_time = end_time - start_time
+log_global(get_timestamp(end_time), f"[INFO] Total running time: {total_time}")
+
+
 
 
 # log the scan mode

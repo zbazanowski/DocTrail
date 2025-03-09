@@ -8,7 +8,9 @@ import argparse
 import smtplib
 from email.mime.text import MIMEText
 
+###########################################################
 # Argument Parsing
+#
 parser = argparse.ArgumentParser(description="DocTrail - Document Versioning System")
 
 parser.add_argument("projects_folder", help="Folder where active documents are stored")
@@ -28,16 +30,17 @@ parser.add_argument("--no-email",        help="Disable email notifications",    
 
 args = parser.parse_args()
 
+# Ensure only one scan mode is selected
 conflict_sum = sum([args.consistency_scan, args.hash_scan, args.mtime_scan])
-
 if conflict_sum > 1:
     print("❌ Conflicting scan modes! Use only one: --hash-scan, --consistency-scan, or --mtime-scan.")
     sys.exit(1)
 
-# set default scan mode 
+# Set default scan mode if none is selected
 if conflict_sum == 0:
     args.mtime_scan = True  # default
 
+# Define global variables
 PROJECTS_ROOT = args.projects_folder
 HISTORY_ROOT = args.history_folder
 ADMIN_FOLDER = args.admin_folder
@@ -49,6 +52,7 @@ os.makedirs(ADMIN_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".md", ".csv", ".png", ".jpg"}
 
+# Initialize statistics dictionary
 statistics = {
     "total_files": 0,
     "checked_files": 0,
@@ -61,8 +65,11 @@ statistics = {
 
 
 
+###########################################################
 # Helper functions
-def get_timestamp(time=datetime.datetime.now()):
+#
+def get_timestamp(time=0):
+    time = datetime.datetime.now() if time == 0 else time
     return time.strftime("%Y-%m-%dT%H-%M-%S-%f")
 
 def calculate_file_hash(filepath):
@@ -125,6 +132,7 @@ def update_hash_file(file, hash=None, mtime=0, timestamp=0):
                 "last_version_timestamp": timestamp }
     with open(file, 'w') as f:
         json.dump(data, f)
+    log_global(timestamp, f"[HASH] {file} updated")
 
 def read_hash_file(hash_file_path):
     data = {}
@@ -217,6 +225,7 @@ def full_scan(force_version=False):
 # Main
 ############################################
 
+
 ############################################
 # Start
 #
@@ -237,9 +246,3 @@ log_global(get_timestamp(end_time), "[END] Versioning script ended" + '\n' + jso
 # Calculate and log the total running time
 total_time = end_time - start_time
 log_global(get_timestamp(end_time), f"[INFO] Total running time: {total_time}")
-
-
-
-
-# log the scan mode
-# add and log statistics

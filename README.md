@@ -7,38 +7,46 @@
 
 ## 🌟 Overview
 **DocTrail** is a lightweight and flexible **versioning automation tool** for managing annotated documents (PDFs, DOCX, TXT, and more).  
-It automatically tracks changes to files stored in your **Projects folder**, keeping **time-stamped historical versions** in hidden folders next to each file.
+It automatically tracks changes to files stored in your **Projects folder**, keeping **time-stamped historical versions** in the separate `TrackedHistory/` folder.
 
 ---
 
 ## 🚀 Features
 ✅ Works for any file type you configure (PDF, DOCX, TXT, etc.)  
-✅ Auto-detects changes and versions files without user interaction  
-✅ Keeps historical versions in hidden folders next to each file  
+✅ Auto-detects changes and versions files without user interaction   
+✅ Keeps historical versions in `TrackedHistory/`, separate from the working `Projects/` folder  
 ✅ Maintains a **global log** for audit trail  
-✅ Detects missing history folders and can auto-rebuild them  
+✅ Supports multiple scan modes (flexible performance vs. precision)  
 ✅ Optional **email alerts** on error conditions  
-✅ Compatible with **iCloud Drive** or other cloud-synced storage  
+✅ Compatible with **iCloud Drive, OneDrive, Dropbox**, etc.  
+
 
 ---
 
-## 📁 Folder Structure
+## 📂 Folder Structure
 ```
-Projects/
+Projects/                     # Your active working files
 ├── Project_A/
 │   ├── Document_1.pdf
-│   ├── .document_1_pdf/           # Hidden folder with history versions
 │   ├── Document_2.docx
-│   ├── .document_2_docx/
 ├── Project_B/
 │   ├── Notes.md
-Admin/
-├── version_log.md                  # Global versioning log
+
+TrackedHistory/               # Automatically maintained historical versions
+├── .Project_A/
+│   ├── .document_1_pdf/      # History versions of Document_1.pdf
+│   ├── .document_2_docx/     # History versions of Document_2.docx
+├── .Project_B/
+│   ├── .notes_md/            # History versions of Notes.md
+
+Admin/                        # Logs and admin files
+├── version_log.md            # Global versioning log
 ```
 
 ---
 
 ## 📥 Installation
+
 ### 1. Clone the Repo
 ```sh
 git clone https://github.com/your-username/doctrail.git
@@ -55,32 +63,32 @@ source venv/bin/activate
 
 ---
 
-## ▶️ Usage
-### Full Scan (all files in all projects)
+## ▶️ Usage Examples
+
+### Full Scan (all files in all projects - default mtime (modification time) scan)
 ```sh
-python3 versioning_script.py ./Projects ./Admin your@email.com
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com
 ```
 
-### Scan Single File
+### Full Scan based on Hash
 ```sh
-python3 versioning_script.py ./Projects ./Admin your@email.com --scan-file "./Projects/Project_A/Document_1.pdf"
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --hash-scan
 ```
 
-### Force Rescan All Files (ignore existing hashes)
+### Force New Version for Each File
 ```sh
-python3 versioning_script.py ./Projects ./Admin your@email.com --rescan-all
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --force-version
 ```
 
-### Rebuild Missing History Folders
+### Force New Version for a Single File  (irrespective of hash and mtime)
 ```sh
-python3 versioning_script.py ./Projects ./Admin your@email.com --rebuild-folders
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --force-version --scan-file "./Projects/Project_A/Document_1.pdf"
 ```
 
 ### Disable Email Notifications
 ```sh
-python3 versioning_script.py ./Projects ./Admin your@email.com --no-email
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --no-email
 ```
-
 ---
 
 ## ⚙️ Automation (Optional for macOS)
@@ -99,16 +107,7 @@ launchctl load ~/Library/LaunchAgents/com.example.doctrail.plist
 ---
 
 ## ✅ Supported File Types
-You can easily extend this list in the script:
-- PDF
-- DOCX
-- TXT
-- XLSX
-- PPTX
-- MD
-- CSV
-- PNG
-- JPG
+- PDF, DOCX, TXT, XLSX, PPTX, MD, CSV, PNG, JPG
 
 ---
 
@@ -120,7 +119,11 @@ By default, it tries sending via `localhost` SMTP (e.g., Postfix).
 ---
 
 ## 📊 Future Enhancements (Ideas)
+- [ ] Add LICENCE.md
+- [ ] Improve the command line logic for email support
+- [ ] GitHub Actions for testing
 - [ ] Add support for cloud storage APIs (Google Drive, Dropbox metadata integration)
+- [ ] Cloud API support (OneDrive/Google Drive)
 - [ ] Add GitHub Actions for CI testing
 - [ ] Add Dockerfile for containerized deployment (optional for servers)
 - [ ] Consider whether --rebuild-folders option is necessary

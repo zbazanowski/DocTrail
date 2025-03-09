@@ -85,10 +85,22 @@ python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com 
 python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --force-version --scan-file "./Projects/Project_A/Document_1.pdf"
 ```
 
+### Consistency Check
+```sh
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --consistency-scan
+```
+
 ### Disable Email Notifications
 ```sh
 python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --no-email
 ```
+
+### Check Logs
+```sh
+more ./Admin/version_log.md
+```
+
+
 ---
 
 ## ⚙️ Automation (Optional for macOS)

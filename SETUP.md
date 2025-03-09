@@ -1,30 +1,29 @@
-
 # 🚀 DocTrail - Setup Guide for macOS
 
-This guide helps you configure DocTrail to run automatically using `launchd`.
+This guide explains how to set up **DocTrail** with `launchd` on macOS.
 
 ---
 
-## 📂 Step 1 - Place DocTrail Files
-Ensure your DocTrail project is organized like this:
-
+## 📂 Step 1 - Check the Folder Structure
+Your `DocTrail` project should look like this:
 ```
 ~/DocTrail/
-├── Projects/                  # Your documents go here
-├── Admin/                      # Log files go here
-├── versioning_script.py        # The main script
-├── com.example.doctrail.plist  # The launchd agent file
+├── Projects/                     # Active working files
+├── TrackedHistory/               # Historical versions (managed by DocTrail)
+├── Admin/                        # Logs and admin files
+├── versioning_script.py          # Main script
+├── de.bazanowski.doctrail.plist  # launchd agent
 ```
 
 ---
 
-## ⚙️ Step 2 - Configure the `plist`
-Edit `com.example.doctrail.plist` to point to your actual file locations and email. Example:
-
+## ⚙️ Step 2 - Configure `de.bazanowski.doctrail.plist`
+Edit the `plist` to point to your actual file locations and email. Example:
 ```xml
 <string>/usr/bin/python3</string>
 <string>/Users/your-username/DocTrail/versioning_script.py</string>
 <string>/Users/your-username/DocTrail/Projects</string>
+<string>/Users/your-username/DocTrail/TrackedHistory</string>
 <string>/Users/your-username/DocTrail/Admin</string>
 <string>your@email.com</string>
 ```
@@ -33,12 +32,12 @@ Make sure all paths are **fully qualified** (no `~` shorthand).
 
 ---
 
-## 📁 Step 3 - Install the `plist`
+## 📥 Step 3 - Install the `plist`
 Copy the file into the correct folder:
 
 ```sh
 mkdir -p ~/Library/LaunchAgents
-cp com.example.doctrail.plist ~/Library/LaunchAgents/
+cp de.bazanowski.doctrail.plist ~/Library/LaunchAgents/
 ```
 
 ---
@@ -52,31 +51,24 @@ launchctl load ~/Library/LaunchAgents/com.example.doctrail.plist
 
 ---
 
-## ✅ Step 5 - Confirm It's Running
-To check the status:
-
+## ✅ Step 5 - Check Status
 ```sh
 launchctl list | grep doctrail
 ```
 
-You should see `com.example.doctrail` in the list.
+You should see `de.bazanowski.doctrail.plist` in the list.
 
 ---
 
-## 🔄 Step 6 - Test Manually (Optional)
-You can always run DocTrail manually to check:
-
-```sh
-python3 versioning_script.py ./Projects ./Admin your@email.com
-```
-
----
-
-## 🛠️ Step 7 - Troubleshooting
+## 🛠️ Troubleshooting
 If the agent fails, check its logs here:
 
 ```sh
-cat ~/Library/Logs/com.example.doctrail.log
+cat ~/Library/Logs/de.bazanowski.doctrail.log
+```
+
+```sh
+more ./Admin/version_log.md
 ```
 
 ---
@@ -90,11 +82,17 @@ launchctl unload ~/Library/LaunchAgents/com.example.doctrail.plist
 
 ---
 
-## 📧 Email Alerts
-For email alerts to work, your Mac needs to be able to send email from the terminal.
+## 🔄 Manual (ad-hoc) Testing
+You can always run DocTrail manually to check changes:
 
-- If you want **Gmail SMTP** (or another provider) instead of the local Postfix, I can modify the script for you.
-- Just let me know if you want that customization.
+```sh
+python3 versioning_script.py ./Projects ./TrackedHistory ./Admin your@email.com --consistency-scan
+```
+
+---
+
+## 📧 Email Alerts
+Ensure local email sending works (Postfix) or modify to use Gmail SMTP.
 
 ---
 

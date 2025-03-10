@@ -132,6 +132,9 @@ By default, it tries sending via `localhost` SMTP (e.g., Postfix).
 
 ## 📊 Future Enhancements (Ideas)
 - [ ] Add LICENCE.md
+- [ ] Consilidate timezones
+- [ ] Polish up the parsing code
+- [ ] Add --analysis-scan (categorize files into UP-TO-DATE, UPDATED, INCOSTENT)
 - [ ] Improve the command line logic for email support
 - [ ] GitHub Actions for testing
 - [ ] Add support for cloud storage APIs (Google Drive, Dropbox metadata integration)

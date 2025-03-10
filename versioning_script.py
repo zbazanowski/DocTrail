@@ -19,7 +19,7 @@ parser.add_argument("admin_folder", help="Folder for logs and admin files")
 parser.add_argument("alert_email", help="Email address for error notifications")
 
 # Scan modes
-parser.add_argument("--consistency-scan", action="store_true", help="Hybrid scan (timestamp + hash if needed) (default)")
+parser.add_argument("--consistency-scan", action="store_true", help="Check for files touched but unchanged")
 parser.add_argument("--hash-scan", action="store_true", help="Always use full hash scan")
 parser.add_argument("--mtime-scan", action="store_true", help="Fast scan using only timestamps")
 parser.add_argument("--scan-file", help="Scan a specific file only")
@@ -200,7 +200,7 @@ def process_file(current_file_path, force_version=False):
         #print(f'----- {current_file_path} --------------')
         #print(current_mtime, last_version_mtime)
         #print(current_hash, last_version_hash)
-        if  not ( current_mtime >= last_version_mtime and current_hash == last_version_hash ):
+        if current_mtime == last_version_mtime and current_hash != last_version_hash:
             log_global(timestamp, f"[INCONSISTENCY] {current_file_path} has inconsistent hash and mtime")         
             statistics["inconsistent_files"] += 1
 
@@ -216,7 +216,6 @@ def full_scan(force_version=False):
             # filter out dot files
             if file.startswith("."):
                 continue
-            print('.')
             process_file(os.path.join(root, file), force_version)
 
 

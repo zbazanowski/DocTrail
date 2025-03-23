@@ -132,17 +132,18 @@ By default, it tries sending via `localhost` SMTP (e.g., Postfix).
 
 ## 📊 Future Enhancements (Ideas)
 - [ ] Add LICENCE.md
-- [ ] Consilidate timezones
+- [ ] Consolidate timezones
+- [ ] Add the original name of the backed-up file, its file size, and full details of the current and the last version to hash.json
 - [ ] Polish up the parsing code
 - [ ] Add --analysis-scan (categorize files into UP-TO-DATE, UPDATED, INCOSTENT)
 - [ ] Improve the command line logic for email support
-- [ ] GitHub Actions for testing
 - [ ] Add support for cloud storage APIs (Google Drive, Dropbox metadata integration)
 - [ ] Cloud API support (OneDrive/Google Drive)
 - [ ] Add GitHub Actions for CI testing
 - [ ] Add Dockerfile for containerized deployment (optional for servers)
 - [ ] Consider whether --rebuild-folders option is necessary
 - [ ] Rename Forced rescan to forced version (new version for every supported file)
+- [ ] Add an option switch to the script to output all details for a specified file (parameter of the option)
 
 ---
 
